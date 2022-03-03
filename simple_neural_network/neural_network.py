@@ -39,23 +39,29 @@ class NeuralNetwork:
         """
         return NeuralNetwork(weights, self.activation_function)
 
-    def fit_input(self, input_vector: np.ndarray) -> Union[int, float]:
+    def feed_forward(self, input_vector: np.ndarray) -> Union[int, float]:
         def contains_all_zeros(array: np.ndarray) -> bool:
             return np.all(array == 0)
 
-        print(input_vector)
-
-        input_vector = np.append(input_vector, 1)  # bias weight
-        for layer_index, layer in enumerate(self.weights):
+        input_vector = np.append(input_vector, 1)  # 1 is for bias
+        
+        # Iterate layers. 
+        for layer in self.weights:
             layer_output_vector = np.zeros(shape=len(layer.shape))
+            
+            # Iterate neurons.
             for neuron_index, neuron_weights in enumerate(layer):
+                
+                # If neuron is not active.
                 if contains_all_zeros(neuron_weights):
                     layer_output_vector[neuron_index] = 0
                     continue
+
+                # Compute perceptron.
                 perceptron = Perceptron(np.array(neuron_weights), self.activation_function)
                 layer_output_vector[neuron_index] = perceptron.fit_input(input_vector)
             input_vector = np.append(layer_output_vector, 1)
 
-        output_layer = [not contains_all_zeros(neuron_weights) for neuron_weights in self.weights[-1]] + [False]
+        output_layer = [not contains_all_zeros(neuron_weights) for neuron_weights in self.weights[-1]] + [False]  # False for bias.
         return input_vector[output_layer]
 
