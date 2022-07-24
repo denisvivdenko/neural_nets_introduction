@@ -11,8 +11,8 @@ class LogisticRegression:
         predictions = np.dot(self.weights.T, X) + self.bias
         return np.array([1 if prediction > self.threshold else 0 for prediction in predictions])
 
-    def train_model(self, X: np.array, y: np.array, n_iterations: int, learning_rate: float) -> None:
-        pass
+    def train_model(self, X: np.array, Y: np.array, n_iterations: int, learning_rate: float) -> None:
+        self.weights, self.bias = self._optimize_parameters(self.weights, self.bias, X, Y, n_iterations, learning_rate)
     
     def _sigma_function(self, Z: np.array) -> np.array:
         """Vectorized function: 1 / (1 + exp(-z))"""
@@ -26,5 +26,5 @@ class LogisticRegression:
         """
         pass
 
-    def _optimize_parameters(self, weights: np.array, bias: float, n_iterations: int, learning_rate: float) -> Tuple[np.array, float]:
+    def _optimize_parameters(self, weights: np.array, bias: float, X: np.array, Y: np.array, n_iterations: int, learning_rate: float) -> Tuple[np.array, float]:
         pass
