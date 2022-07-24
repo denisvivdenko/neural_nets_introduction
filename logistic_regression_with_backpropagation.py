@@ -1,3 +1,4 @@
+from re import M
 from typing import Tuple
 import numpy as np
 
@@ -9,7 +10,7 @@ class LogisticRegression:
         self.bias = 0
     
     def predict(self, X: np.array) -> np.array:
-        predictions = np.dot(self.weights.T, X) + self.bias
+        predictions = np.dot(self.weights, X.T) + self.bias
         return np.array([1 if prediction > self.threshold else 0 for prediction in predictions])
 
     def train_model(self, X: np.array, Y: np.array, n_iterations: int, learning_rate: float) -> None:
@@ -21,11 +22,21 @@ class LogisticRegression:
     
     def _backpropagate_values(self, weights: np.array, bias: float, X: np.array, Y: np.array) -> Tuple[float, float]:
         """
+        m - number of datapoints, n - number of features.
+        weights.shape = (n, 1)
+        X.shape = (m, n)
+        Y.shape = (m, 1)
+
         Returns derivatives:
-            dw: np.array
-            db: np.array 
+            dw: np.array (shape = (n, 1))
+            db: float
         """
-        pass
+        n_records = X.shape[0]
+        Z = np.dot(X, weights) + bias  # Z.shape = (m, 1)
+        A = self._sigma_function(Z)  # A.shape = (m, 1)
+        dw = np.dot(X.T, (A - Y)) / n_records  # dw.shape = (n, 1)
+        db = np.sum((A - Y)) / n_records
+        return (dw, db)
 
     def _optimize_parameters(self, weights: np.array, bias: float, X: np.array, Y: np.array, n_iterations: int, learning_rate: float) -> Tuple[np.array, float]:
         for _ in range(n_iterations):
