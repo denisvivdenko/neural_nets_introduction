@@ -1,6 +1,7 @@
 from typing import Tuple
 import numpy as np
 
+
 class LogisticRegression:
     def __init__(self, n_dimentions: int, threshold: float = 0.5) -> None:
         self.threshold = threshold
@@ -27,4 +28,8 @@ class LogisticRegression:
         pass
 
     def _optimize_parameters(self, weights: np.array, bias: float, X: np.array, Y: np.array, n_iterations: int, learning_rate: float) -> Tuple[np.array, float]:
-        pass
+        for _ in range(n_iterations):
+            dw, db = self._backpropagate_values(weights, bias, X, Y)
+            weights = weights - learning_rate * dw
+            bias = bias - learning_rate * db
+        return weights, bias
