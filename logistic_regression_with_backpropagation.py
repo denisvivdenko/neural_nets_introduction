@@ -14,7 +14,7 @@ class LogisticRegression:
     
     def _sigma_function(self, Z: np.array) -> np.array:
         """Vectorized function: 1 / (1 + exp(-z))"""
-        pass
+        return 1 / (1 + np.exp(-Z))
     
     def _backpropagate_values(self, weights: np.array, bias: float, X: np.array, Y: np.array) -> Tuple[float, float]:
         """
