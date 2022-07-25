@@ -1,6 +1,7 @@
-from re import M
 from typing import Tuple
 import numpy as np
+import pandas as pd
+import h5py
 
 
 class LogisticRegression:
@@ -44,3 +45,22 @@ class LogisticRegression:
             weights = weights - learning_rate * dw
             bias = bias - learning_rate * db
         return weights, bias
+
+
+def read_h5(file_path: str) -> Tuple[np.array, np.array]:
+    with h5py.File(file_path, "r") as file:
+        X_key, Y_key = list(file.keys())[1: 3] 
+        return file[X_key][()], file[Y_key][()]
+
+
+if __name__ == "__main__":
+    train_dataset_path = "./dataset/train_catvnoncat.h5"
+    test_dataset_path = "./dataset/test_catvnoncat.h5"
+    X_train, Y_train = read_h5(train_dataset_path)
+    X_test, Y_test = read_h5(test_dataset_path)
+    print(f"X_train.shape = {X_train.shape}. X_test.shape = {X_test.shape}\nY_train.shape = {Y_train.shape}. Y_test.shape = {Y_test.shape}")
+    X_train = X_train.reshape(X_train.shape[0], -1).T
+    X_test = X_test.reshape(X_test.shape[0], -1).T
+    Y_train, Y_test = Y_train.reshape(-1, 1).T, Y_test.reshape(-1, 1).T
+    print("RESHAPING DATASET...")
+    print(f"X_train.shape = {X_train.shape}. X_test.shape = {X_test.shape}\nY_train.shape = {Y_train.shape}. Y_test.shape = {Y_test.shape}")
