@@ -1,6 +1,7 @@
 from typing import Tuple
+
+from sklearn.metrics import recall_score, precision_score
 import numpy as np
-import pandas as pd
 import h5py
 
 
@@ -11,17 +12,20 @@ class LogisticRegression:
         self.bias = 0
     
     def predict(self, X: np.array) -> np.array:
-        predictions = np.dot(self.weights, X.T) + self.bias
-        return np.array([1 if prediction > self.threshold else 0 for prediction in predictions])
+        return self._compute_output(X, weights=self.weights, bias=self.bias)
 
     def train_model(self, X: np.array, Y: np.array, n_iterations: int, learning_rate: float) -> None:
         self.weights, self.bias = self._optimize_parameters(self.weights, self.bias, X, Y, n_iterations, learning_rate)
-    
+
+    def _compute_output(self, X: np.array, weights: np.array, bias: float) -> np.array:
+        predictions = self._sigma_function(np.dot(weights.T, X) + bias)
+        return np.array([1 if prediction > self.threshold else 0 for prediction in predictions.T]).T.reshape(1, -1)
+
     def _sigma_function(self, Z: np.array) -> np.array:
         """Vectorized function: 1 / (1 + exp(-z))"""
         return 1 / (1 + np.exp(-Z))
     
-    def _backpropagate_values(self, weights: np.array, bias: float, X: np.array, Y: np.array) -> Tuple[float, float]:
+    def _backpropagate_values(self, weights: np.array, bias: float, X: np.array, Y: np.array) -> Tuple[float, float, float]:
         """
         m - number of datapoints, n - number of features.
         weights.shape = (n, 1)
@@ -36,20 +40,20 @@ class LogisticRegression:
         Z = np.dot(weights.T, X) + bias  # Z.shape = (1, m)
         A = self._sigma_function(Z)  # A.shape = (1, m)
 
-        # print(A)
-        cost_function = np.sum(Y * np.log(A) + (1 - Y) * np.log(1 - A))
-        print(f"cost: {cost_function}")
+        cost_function = -np.sum(Y * np.log(A) + (1 - Y) * np.log(1 - A))
 
         dw = np.dot(X, (A - Y).T) / n_records  # dw.shape = (n, 1)
         db = np.sum((A - Y)) / n_records
-        return (dw, db)
+        return dw, db, cost_function
 
     def _optimize_parameters(self, weights: np.array, bias: float, X: np.array, Y: np.array, n_iterations: int, learning_rate: float) -> Tuple[np.array, float]:
-        for _ in range(n_iterations):
-            dw, db = self._backpropagate_values(weights, bias, X, Y)
+        for epoch in range(n_iterations):
+            dw, db, cost = self._backpropagate_values(weights, bias, X, Y)
             weights = weights - learning_rate * dw
             bias = bias - learning_rate * db
-            # print(f"weights: {weights} || bias: {bias}")
+            if epoch % 100 == 0:
+                Y_predicted = self._compute_output(X, weights, bias)
+                print(f"Cost: {cost:.2f}. Precision: {precision_score(Y.flatten(), Y_predicted.flatten()):.2f}. Recall: {recall_score(Y.flatten(), Y_predicted.flatten()):.2f}")
         return weights, bias
 
 
