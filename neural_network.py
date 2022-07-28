@@ -3,7 +3,7 @@ from typing import Tuple
 
 
 class NeuralNetwork:
-    def __init__(self, n_hidden_units) -> None:
+    def __init__(self, n_hidden_units: int) -> None:
         self.n_hidden_units = n_hidden_units
         self.parameters = dict()
 
@@ -27,8 +27,13 @@ class NeuralNetwork:
     
     def initialize_parametres(self, n_input_units: int, n_hidden_units: int, n_output_units: int) -> dict:
         """Randomly initializes W1, b1, W2, b2 parameters and store them in a dictionary."""    
-        pass
+        parameters = dict()
+        parameters["W1"] = np.random.randn(n_hidden_units, n_input_units) * 0.01
+        parameters["W2"] = np.random.randn(n_output_units, n_hidden_units) * 0.01
+        parameters["b1"] = 0
+        parameters["b2"] = 0
+        return parameters
     
     def sigma(self, Z: np.array) -> np.array:
         """Sigma activation function 1 / (1 + exp(-Z))."""
-        pass
+        return 1  / (1 + np.exp(-Z))
