@@ -11,11 +11,14 @@ class NeuralNetwork:
         self.parameters = dict()
 
     def predict(self, X: np.array, parameters: dict = None) -> np.array:
-        pass
+        model_parameters = parameters if parameters is not None else self.parameters
+        A_output, _ = self.forward_propagation(model_parameters, X)
+        # return A_output
+        return np.where(A_output > 0.5, 1, 0) 
 
     def train_model(self, X: np.array, Y: np.array, n_epoch: int = 1000, learning_rate: float = 0.05) -> None:
         n_input_units = X.shape[0]
-        n_output_units = X.shape[0]
+        n_output_units = Y.shape[0]
         parameters = self.initialize_parametres(n_input_units, self.n_hidden_units, n_output_units)
         for epoch in range(n_epoch):
             A_output, cache = self.forward_propagation(parameters, X)
@@ -94,6 +97,6 @@ class NeuralNetwork:
 if __name__ == "__main__":
     X, Y = load_planar_dataset()
     model = NeuralNetwork(n_hidden_units=4)
-    model.train_model(X, Y, n_epoch=10**5, learning_rate=0.1)
-    plot_decision_boundary(lambda x: model.predict(x), X, Y)
+    model.train_model(X, Y, n_epoch=10**1, learning_rate=0.1)
+    plot_decision_boundary(lambda x: model.predict(x.T), X, Y)
     plt.show()
