@@ -12,30 +12,29 @@ class NeuralNetwork:
 
     def predict(self, X: np.array, parameters: dict = None) -> np.array:
         model_parameters = parameters if parameters is not None else self.parameters
-        A_output, _ = self.forward_propagation(model_parameters, X)
-        # return A_output
+        A_output, _ = self._propagate_forward(model_parameters, X)
         return np.where(A_output > 0.5, 1, 0) 
 
     def train_model(self, X: np.array, Y: np.array, n_epoch: int = 1000, learning_rate: float = 0.05) -> None:
         n_input_units = X.shape[0]
         n_output_units = Y.shape[0]
-        parameters = self.initialize_parametres(n_input_units, self.n_hidden_units, n_output_units)
+        parameters = self._generate_parametres(n_input_units, self.n_hidden_units, n_output_units)
         for epoch in range(n_epoch):
-            A_output, cache = self.forward_propagation(parameters, X)
-            gradients = self.backward_propagation(cache, parameters, X, Y)
-            parameters = self.update_parameters(parameters, gradients, learning_rate)
-            if epoch % 1000 == 0: print(f"Cost: {self.compute_cost(A_output, Y)}")
-        print(f"Final cost: {self.compute_cost(A_output, Y)}")
+            A_output, cache = self._propagate_forward(parameters, X)
+            gradients = self._propagate_backward(cache, parameters, X, Y)
+            parameters = self._update_parameters(parameters, gradients, learning_rate)
+            if epoch % 1000 == 0: print(f"Cost: {self._compute_cost(A_output, Y)}")
+        print(f"Final cost: {self._compute_cost(A_output, Y)}")
         self.parameters = parameters        
 
-    def forward_propagation(self, parameters: dict, X: np.array) -> Tuple[float, dict]:
+    def _propagate_forward(self, parameters: dict, X: np.array) -> Tuple[float, dict]:
         """Returns A[L], Cost and cached values Z[l] and A[l] in dictionary."""
         W1, W2 = parameters["W1"], parameters["W2"]
         b1, b2 = parameters["b1"], parameters["b2"]
         Z1 = np.dot(W1, X) + b1
         A1 = np.tanh(Z1)
         Z2 = np.dot(W2, A1) + b2
-        A2 = self.sigma(Z2)
+        A2 = self._compute_sigma(Z2)
         cache = {
             "Z1": Z1,
             "A1": A1,
@@ -44,7 +43,7 @@ class NeuralNetwork:
         }
         return A2, cache
 
-    def backward_propagation(self, cache: dict, parameters: dict, X: np.array, Y: np.array) -> dict:
+    def _propagate_backward(self, cache: dict, parameters: dict, X: np.array, Y: np.array) -> dict:
         """Computes gradients for parameters and returns dictionary with dW1, db1, dW2, db2 values."""
         m = X.shape[1]
         W1, W2 = parameters["W1"], parameters["W2"]  # W1.shape = (n1, nx); W2.shape = (n2, n1)
@@ -64,7 +63,7 @@ class NeuralNetwork:
         }
         return gradients
 
-    def update_parameters(self, parameters: dict, gradients: dict, learning_rate: float) -> dict:
+    def _update_parameters(self, parameters: dict, gradients: dict, learning_rate: float) -> dict:
         """Returns dict with updated parameters"""
         updated_parameters = {}
         W1, W2  = parameters["W1"], parameters["W2"]
@@ -76,7 +75,7 @@ class NeuralNetwork:
         updated_parameters["b2"] = db2 - learning_rate * db2
         return updated_parameters
 
-    def initialize_parametres(self, n_input_units: int, n_hidden_units: int, n_output_units: int) -> dict:
+    def _generate_parametres(self, n_input_units: int, n_hidden_units: int, n_output_units: int) -> dict:
         """Randomly initializes W1, b1, W2, b2 parameters and store them in a dictionary."""    
         parameters = dict()
         parameters["W1"] = np.random.randn(n_hidden_units, n_input_units) * 0.01
@@ -85,11 +84,11 @@ class NeuralNetwork:
         parameters["b2"] = 0
         return parameters
     
-    def sigma(self, Z: np.array) -> np.array:
+    def _compute_sigma(self, Z: np.array) -> np.array:
         """Sigma activation function 1 / (1 + exp(-Z))."""
         return 1  / (1 + np.exp(-Z))
 
-    def compute_cost(self, A_output: np.array, Y: np.array) -> float:
+    def _compute_cost(self, A_output: np.array, Y: np.array) -> float:
         m = A_output.shape[1]
         return -np.sum(Y * np.log(A_output) + (1 - Y) * np.log(1 - A_output)) / m
 
