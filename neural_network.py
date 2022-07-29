@@ -7,7 +7,7 @@ class NeuralNetwork:
         self.n_hidden_units = n_hidden_units
         self.parameters = dict()
 
-    def predict(self, X: np.array) -> np.array:
+    def predict(self, X: np.array, parameters: dict = None) -> np.array:
         pass
 
     def train_model(self, X: np.array, Y: np.array, n_epoch: int = 100, learning_rate: float = 0.05) -> None:
@@ -18,7 +18,7 @@ class NeuralNetwork:
             A_output, cache = self.forward_propagation(parameters, X)
             gradients = self.backward_propagation(cache, parameters, X, Y)
             parameters = self.update_parameters(parameters, gradients, learning_rate)
-            # if epoch % 10 == 0: print(f"Cost: {cost}")
+            if epoch % 10 == 0: print(f"Cost: {self.compute_cost(A_output, Y)}")
         self.parameters = parameters        
 
     def forward_propagation(self, parameters: dict, X: np.array) -> Tuple[float, dict]:
@@ -81,3 +81,7 @@ class NeuralNetwork:
     def sigma(self, Z: np.array) -> np.array:
         """Sigma activation function 1 / (1 + exp(-Z))."""
         return 1  / (1 + np.exp(-Z))
+
+    def compute_cost(self, A_output: np.array, Y: np.array) -> float:
+        m = A_output.shape[1]
+        return np.sum(Y * np.log(A_output) + (1 - Y) * np.log(1 - A_output)) / m
