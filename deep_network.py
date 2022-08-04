@@ -1,7 +1,6 @@
 from collections import namedtuple
-from typing import Callable
+from typing import Callable, Tuple
 import numpy as np
-from torch import ne
 
 
 Layer = namedtuple("Layer", ["n_neurons", "activation_function"])
@@ -48,8 +47,10 @@ class DeepNetwork:
     def train_model(self, X: np.array, Y: np.array, n_iterations: int, learning_rate: float) -> None:
         if not self._parameters:
             self._parameters = self._generate_parameters(self._network_architecture)
+        parameters = self._parameters
         for _ in range(n_iterations):
-            pass
+            A_output, cache = self._propagate_forward(X, parameters)
+        
 
     def _generate_parameters(self, network_architecture: NetworkArchitecture) -> dict:
         parameters = {}
@@ -59,10 +60,22 @@ class DeepNetwork:
             parameters[f"b{layer}"] = np.zeros((weight_matrix_shape[0], 1))
         return parameters
 
-    def _propagate_forward(self) -> None:
+    def _compute_cost(self, A_output: np.array, Y: np.array) -> float:
+        pass
+
+    def _propagate_forward(self, X: np.array, parameters: dict) -> Tuple[float, dict]:
+        """Returns: tuple of A[L] and cache."""
         pass
 
     def _propagate_backward(self) -> None:
+        """
+        dZ[l] = A[l] - Y   for sigmoid activ. func.            || (n[l], m) 
+        dW[l] = 1/m * np.dot(dZ[l], A[l-1].T)                  || (n[l], n[l-1])
+        db[l] = 1/m * np.sum(dZ[l], axis=1, keepdims=True)     || (n[l], 1)
+        dZ[l-1] = np.dot(W2.T, dZ[l]) * d_activation(Z[l-1])   || (n[l-1], m)
+        dW[l-1] = 1/m * np.dot(dZ[l-1], A[l-2].T)              || (n[l-1], n[l-2])
+        db[l-1] = 1/m * np.sum(dZ[l-1], axis=1, keepdims=True) || (n[l-1], 1)
+        """
         pass
 
     
