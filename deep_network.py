@@ -56,9 +56,10 @@ class DeepNetwork:
         parameters = dict(self._parameters)
         for _ in range(n_iterations):
             A_output, cache = self._propagate_forward(X, parameters)
+            print(cache.keys())
             grads = self._propagate_backward(X, Y, parameters, cache)
-            
-
+            parameters = self._update_parameters(parameters, grads, learning_rate)
+        
     def _generate_parameters(self, network_architecture: NetworkArchitecture) -> dict:
         parameters = {}
         for layer in range(1, network_architecture.n_layers):
@@ -69,6 +70,14 @@ class DeepNetwork:
 
     def _compute_cost(self, A_output: np.array, Y: np.array) -> float:
         pass
+
+    def _update_parameters(self, parameters: dict, grads: dict, learning_rate: float) -> dict:
+        parameters = dict(parameters)
+        for key, parameter_value in parameters.items():
+            parameter_name, layer = key
+            print(parameter_value.shape)
+            parameters[(parameter_name, layer)] = parameter_value - learning_rate * grads[(f"d{parameter_name}", layer)]
+        return parameters
 
     def _propagate_forward(self, X: np.array, parameters: dict) -> Tuple[float, dict]:
         """Returns: tuple of A[L] and cache."""
@@ -102,13 +111,13 @@ class DeepNetwork:
             grads[("dW", output_layer)] = np.dot(grads[("dZ", output_layer)], cache[("A", output_layer - 1)].T) / m
             grads[("db", output_layer)] = np.sum(grads[("dZ", output_layer)], axis=1, keepdims=True) / m
 
-        for layer in range(output_layer - 1, 1, -1):
+        for layer in range(output_layer - 1, 0, -1):
             d_activation = None
             if self._network_architecture[("layer", layer)].activation_function == np.tanh:
                 d_activation  = np.where(cache["Z", layer] > 0, 1, 0)
             else:
                 raise Exception("Not implemented.")
-
+    
             grads[("dZ", layer)] = np.dot(parameters[("W", layer + 1)].T, grads[("dZ", layer + 1)]) * d_activation
             grads[("dW", layer)] = np.dot(grads["dZ", layer], cache[("A", layer)].T) / m
             grads[("db", layer)] = np.sum(grads[("dZ", layer)], axis=1, keepdims=True) / m
