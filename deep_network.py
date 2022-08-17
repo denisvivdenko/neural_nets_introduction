@@ -1,8 +1,9 @@
 from collections import namedtuple
 from typing import Callable, Dict, Tuple
 import numpy as np
+import matplotlib.pyplot as plt
 
-from dataset.planar_utils import load_planar_dataset
+from dataset.planar_utils import plot_decision_boundary, sigmoid, load_planar_dataset, load_extra_datasets
 
 
 Layer = namedtuple("Layer", ["n_neurons", "activation_function"])
@@ -48,7 +49,8 @@ class DeepNetwork:
         self._parameters = {}
 
     def predict(self, X: np.array) -> np.array:
-        pass
+        A_output, _ = self._propagate_forward(X, self.parameters)
+        return np.where(A_output > 0.5, 1, 0)
 
     def train_model(self, X: np.array, Y: np.array, n_iterations: int, learning_rate: float) -> None:
         if not self._parameters:
@@ -56,10 +58,11 @@ class DeepNetwork:
         parameters = dict(self._parameters)
         for _ in range(n_iterations):
             A_output, cache = self._propagate_forward(X, parameters)
-            print(cache.keys())
+            print(self._compute_cost(A_output, Y))
             grads = self._propagate_backward(X, Y, parameters, cache)
             parameters = self._update_parameters(parameters, grads, learning_rate)
-        
+        self.parameters = parameters
+
     def _generate_parameters(self, network_architecture: NetworkArchitecture) -> dict:
         parameters = {}
         for layer in range(1, network_architecture.n_layers):
@@ -69,14 +72,13 @@ class DeepNetwork:
         return parameters
 
     def _compute_cost(self, A_output: np.array, Y: np.array) -> float:
-        pass
+        m = A_output.shape[1]
+        return - np.sum(Y * np.log(A_output) + (1 - Y) * np.log(1 - A_output)) / m 
 
     def _update_parameters(self, parameters: dict, grads: dict, learning_rate: float) -> dict:
         parameters = dict(parameters)
         for key, parameter_value in parameters.items():
             parameter_name, layer = key
-            print(parameter_value.shape)
-            print(parameter_name)
             parameters[(parameter_name, layer)] = parameter_value - learning_rate * grads[(f"d{parameter_name}", layer)]
         return parameters
 
@@ -118,7 +120,6 @@ class DeepNetwork:
                 d_activation  = np.where(cache["Z", layer] > 0, 1, 0)
             else:
                 raise Exception("Not implemented.")
-    
             grads[("dZ", layer)] = np.dot(parameters[("W", layer + 1)].T, grads[("dZ", layer + 1)]) * d_activation
             grads[("dW", layer)] = np.dot(grads["dZ", layer], cache[("A", layer - 1)].T) / m
             grads[("db", layer)] = np.sum(grads[("dZ", layer)], axis=1, keepdims=True) / m
@@ -128,11 +129,13 @@ class DeepNetwork:
 if __name__ == "__main__":
     architecture = NetworkArchitecture()
     architecture.add_layer(2)
-    architecture.add_layer(5, np.tanh)
+    # architecture.add_layer(5, np.tanh)
     architecture.add_layer(3, np.tanh)
     architecture.add_layer(1, sigmoid)
 
     network = DeepNetwork(architecture)
 
     X, Y = load_planar_dataset()  # (n, m), (1, m)
-    network.train_model(X, Y, n_iterations=100, learning_rate=0.01)
+    network.train_model(X, Y, n_iterations=1000, learning_rate=0.05)
+    plot_decision_boundary(lambda x: network.predict(x.T), X, Y)
+    plt.show()
