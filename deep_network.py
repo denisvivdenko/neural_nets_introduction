@@ -1,6 +1,5 @@
-from array import array
 from collections import namedtuple
-from typing import Callable, Tuple
+from typing import Callable, Dict, Tuple
 import numpy as np
 
 from dataset.planar_utils import load_planar_dataset
@@ -11,14 +10,13 @@ Layer = namedtuple("Layer", ["n_neurons", "activation_function"])
 
 class NetworkArchitecture:
     def __init__(self):
-        self._architecture: dict = {}
+        self._architecture: Dict[Layer] = {}
         self.n_layers = 0
 
-    @property
-    def architecture(self) -> dict:
+    def __getitem__(self, key) -> Layer:
         if not self._architecture:
             raise Exception("Network architecture is not defined.")
-        return dict(self._architecture)
+        return self._architecture[key]
 
     @property
     def dimentions(self) -> np.array:
@@ -36,7 +34,7 @@ class NetworkArchitecture:
         layer0 is input layer
         - activation_function is Callable and IT MUST BE VECTORIZED!
         """
-        self._architecture[("layer", self._n_layers)] = Layer(n_neurons, activation_function)
+        self._architecture[("layer", self.n_layers)] = Layer(n_neurons, activation_function)
         self.n_layers += 1
 
 
@@ -55,9 +53,10 @@ class DeepNetwork:
     def train_model(self, X: np.array, Y: np.array, n_iterations: int, learning_rate: float) -> None:
         if not self._parameters:
             self._parameters = self._generate_parameters(self._network_architecture)
-        parameters = self._parameters
+        parameters = dict(self._parameters)
         for _ in range(n_iterations):
             A_output, cache = self._propagate_forward(X, parameters)
+            grads = self._propagate_backward(X, Y, parameters, cache)
             
 
     def _generate_parameters(self, network_architecture: NetworkArchitecture) -> dict:
@@ -78,23 +77,43 @@ class DeepNetwork:
         }
         for layer in range(1, self._network_architecture.n_layers):
             cache[("Z", layer)] = np.dot(parameters[("W", layer)], cache[("A", layer - 1)]) + parameters[("b", layer)]
-            cache[("A", layer)] = self._network_architecture.architecture[("layer", layer)].activation_function(cache[("Z", layer)])
+            cache[("A", layer)] = self._network_architecture[("layer", layer)].activation_function(cache[("Z", layer)])
         return cache[("A", layer)], cache 
 
-    def _propagate_backward(self, Y: np.array, parameters: dict, cache: dict) -> dict:
+    def _propagate_backward(self, X: np.array, Y: np.array, parameters: dict, cache: dict) -> dict:
         """
         Equations:
             dZ[l] = A[l] - Y   for sigmoid activ. func.            || (n[l], m) 
             dW[l] = 1/m * np.dot(dZ[l], A[l-1].T)                  || (n[l], n[l-1])
             db[l] = 1/m * np.sum(dZ[l], axis=1, keepdims=True)     || (n[l], 1)
             dZ[l-1] = np.dot(W[l].T, dZ[l]) * d_activation(Z[l-1])   || (n[l-1], m)
-            dW[l-1] = 1/m * np.dot(dZ[l-1], A[l-2].T)              || (n[l-1], n[l-2])
+            dW[l-1] = 1/m * np.dot(dZ[l-1], A[l-1].T)              || (n[l-1], n[l-2])
             db[l-1] = 1/m * np.sum(dZ[l-1], axis=1, keepdims=True) || (n[l-1], 1)
         Returns: (dict) gradients.
         """
-        # grads[("dZ", )]
-        for layer in range(1, self._network_architecture.n_layers):
-            pass
+        m = X.shape[1]
+        grads = {
+            ("dZ", 0): X
+        }
+        output_layer = self._network_architecture.n_layers - 1
+        output_layer_activation_function = self._network_architecture[("layer", output_layer)].activation_function
+        if output_layer_activation_function.__name__ == sigmoid.__name__:
+            grads[("dZ", output_layer)] = cache[("A", output_layer)] - Y
+            grads[("dW", output_layer)] = np.dot(grads[("dZ", output_layer)], cache[("A", output_layer - 1)].T) / m
+            grads[("db", output_layer)] = np.sum(grads[("dZ", output_layer)], axis=1, keepdims=True) / m
+
+        for layer in range(output_layer - 1, 1, -1):
+            d_activation = None
+            if self._network_architecture[("layer", layer)].activation_function == np.tanh:
+                d_activation  = np.where(cache["Z", layer] > 0, 1, 0)
+            else:
+                raise Exception("Not implemented.")
+
+            grads[("dZ", layer)] = np.dot(parameters[("W", layer + 1)].T, grads[("dZ", layer + 1)]) * d_activation
+            grads[("dW", layer)] = np.dot(grads["dZ", layer], cache[("A", layer)].T) / m
+            grads[("db", layer)] = np.sum(grads[("dZ", layer)], axis=1, keepdims=True) / m
+        return grads
+
 
 if __name__ == "__main__":
     architecture = NetworkArchitecture()
