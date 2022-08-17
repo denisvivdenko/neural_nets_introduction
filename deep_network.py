@@ -76,6 +76,7 @@ class DeepNetwork:
         for key, parameter_value in parameters.items():
             parameter_name, layer = key
             print(parameter_value.shape)
+            print(parameter_name)
             parameters[(parameter_name, layer)] = parameter_value - learning_rate * grads[(f"d{parameter_name}", layer)]
         return parameters
 
@@ -119,7 +120,7 @@ class DeepNetwork:
                 raise Exception("Not implemented.")
     
             grads[("dZ", layer)] = np.dot(parameters[("W", layer + 1)].T, grads[("dZ", layer + 1)]) * d_activation
-            grads[("dW", layer)] = np.dot(grads["dZ", layer], cache[("A", layer)].T) / m
+            grads[("dW", layer)] = np.dot(grads["dZ", layer], cache[("A", layer - 1)].T) / m
             grads[("db", layer)] = np.sum(grads[("dZ", layer)], axis=1, keepdims=True) / m
         return grads
 
@@ -134,4 +135,4 @@ if __name__ == "__main__":
     network = DeepNetwork(architecture)
 
     X, Y = load_planar_dataset()  # (n, m), (1, m)
-    network.train_model(X, Y, n_iterations=1, learning_rate=0.01)
+    network.train_model(X, Y, n_iterations=100, learning_rate=0.01)
